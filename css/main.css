@@ -1,3 +1,8 @@
+line {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
 .node {
   cursor: pointer;
 }
@@ -15,5 +20,5 @@
 path.link {
   fill: none;
   stroke: #ccc;
-  stroke-width: 1.5px;
+  stroke-width: 3px;
 }

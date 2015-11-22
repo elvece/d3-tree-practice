@@ -121,6 +121,11 @@ function update(source) {
 
   nodeUpdate.select("circle")
       .attr("r", 4.5)
+      //new to set radius
+      // .attr("r", function (d) {
+      //   return isNaN(nodeRadius(d[spendField])) ? 2: nodeRadius(d[spendField]);
+      // })
+      //old
       // .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
       .style("fill", function (d) { return d.source ? d.source.linkColor : d.linkColor })
       .style("fill-opacity", function (d) { return ((d.depth + 1) / 5);});
@@ -144,18 +149,46 @@ function update(source) {
   var link = svg.selectAll("path.link")
       .data(links, function(d) { return d.target.id; });
 
+var rootCounter = 0;
+
   // Enter any new links at the parent's previous position.
   link.enter().insert("path", "g")
       .attr("class", "link")
       .attr("d", function(d) {
         var o = {x: source.x0, y: source.y0};
         return diagonal({source: o, target: o});
-      });
+      })
+      .style("stroke", function (d, i) {
+          if (d.source.depth == 0) {
+              rootCounter++;
+              return (d.source.children[rootCounter - 1].linkColor);
+          }
+          else {
+              return (d.source) ? d.source.linkColor : d.linkColor;
+          }
+      })
+      // .style("stroke-width", function (d, i) {
+      //   return isNaN(nodeRadius(d.target[spendField])) ? 4: nodeRadius(d.target[spendField])*2;
+      // })
+      // .style("stroke-opacity", function (d) {
+      //   return d.target[spendField] <= 0 ? .1 : ((d.source.depth + 1) / 4.5);
+      // })
+      .style("stroke-linecap", "round")
+      .on("mouseover", function (d) {node_onMouseOver(d.source);})
+      .on("mouseout", function (d) { node_onMouseOut(d.source)});
 
   // Transition links to their new position.
   link.transition()
       .duration(duration)
-      .attr("d", diagonal);
+      .attr("d", diagonal)
+      // .style("stroke-width", function (d, i) {
+      //   return isNaN(nodeRadius(d.target[spendField])) ? 4: nodeRadius(d.target[spendField])*2;
+      // })
+      // .style("stroke-opacity", function (d) {
+      //     var ret = ((d.source.depth + 1) / 4.5);
+      //     if (d.target[spendField] <= 0) ret = 0.1;
+      //     return ret;
+      // });
 
   // Transition exiting nodes to the parent's new position.
   link.exit().transition()
@@ -171,6 +204,38 @@ function update(source) {
     d.x0 = d.x;
     d.y0 = d.y;
   });
+}
+
+function node_onMouseOver(d) {
+
+  if (typeof d.target != "undefined") {
+      d = d.target;
+  }
+  d3.select(circles[d._children]).transition().style("fill-opacity",0.6);
+  highlightPath(d);
+
+  function highlightPath(d) {
+    if (d) {
+        d3.select(paths[d._children]).style("stroke-opacity",function (d) {
+          return d.target[spendField] <= 0 ? .1 + .3 : ((d.source.depth + 1) / 4.5) + .3;
+        });
+        highlightPath(d.parent);
+    }
+  }
+}
+
+function node_onMouseOut(d) {
+  d3.select(circles[d._children]).transition().style("fill-opacity",0.3);
+  noHighlightPath(d);
+
+  function noHighlightPath(d) {
+    if (d) {
+        d3.select(paths[d._children]).style("stroke-opacity",function (d) {
+          return d.target[spendField] <= 0 ? .1 : ((d.source.depth + 1) / 4.5);
+        });
+        noHighlightPath(d.parent);
+    }
+  }
 }
 
 // Toggle children on click.
