@@ -1,7 +1,3 @@
-var colors = ["#bd0026", "#fecc5c", "#fd8d3c", "#f03b20", "#B02D5D",
-    "#9B2C67", "#982B9A", "#692DA7", "#5725AA", "#4823AF",
-    "#d7b5d8", "#dd1c77", "#5A0C7A", "#5A0C7A"];
-
 
 var margin = {top: 20, right: 120, bottom: 20, left: 120},
     width = 960 - margin.right - margin.left,
@@ -11,8 +7,16 @@ var i = 0,
     duration = 750,
     root;
 
+var colors = ["#bd0026", "#fecc5c", "#fd8d3c", "#f03b20", "#B02D5D",
+    "#9B2C67", "#982B9A", "#692DA7", "#5725AA", "#4823AF",
+    "#d7b5d8", "#dd1c77", "#5A0C7A", "#5A0C7A"];
+
 var tree = d3.layout.tree()
     .size([height, width]);
+
+var circles={};
+var paths={};
+var labels={};
 
 var diagonal = d3.svg.diagonal()
     .projection(function(d) { return [d.y, d.x]; });
@@ -56,6 +60,7 @@ function update(source) {
   // Normalize for fixed-depth.
   nodes.forEach(function(d) {
     d.y = d.depth * 180;
+    //sets link color
     if (d.depth == 1) {
       d.linkColor = colors[(depthCounter % (colors.length - 1))];
       depthCounter++;
@@ -92,9 +97,12 @@ function update(source) {
       .on("mouseout", function (d) {
         node_onMouseOut(d);
       })
-      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; })
+      .style("fill", function(d) {
+        circles[d._children] = this;
+        return d.source ? d.source.linkColor : d.linkColor;
+      })
       .style("fill-opacity", ".8")
-      //change
+      //change?
       .style("stroke", function (d) {
           return d.source ? d.source.linkColor : d.linkColor;
   });
@@ -113,7 +121,9 @@ function update(source) {
 
   nodeUpdate.select("circle")
       .attr("r", 4.5)
-      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+      // .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+      .style("fill", function (d) { return d.source ? d.source.linkColor : d.linkColor })
+      .style("fill-opacity", function (d) { return ((d.depth + 1) / 5);});
 
   nodeUpdate.select("text")
       .style("fill-opacity", 1);
