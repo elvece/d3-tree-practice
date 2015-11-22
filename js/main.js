@@ -1,3 +1,7 @@
+var colors = ["#bd0026", "#fecc5c", "#fd8d3c", "#f03b20", "#B02D5D",
+    "#9B2C67", "#982B9A", "#692DA7", "#5725AA", "#4823AF",
+    "#d7b5d8", "#dd1c77", "#5A0C7A", "#5A0C7A"];
+
 
 var margin = {top: 20, right: 120, bottom: 20, left: 120},
     width = 960 - margin.right - margin.left,
@@ -47,12 +51,32 @@ function update(source) {
   var nodes = tree.nodes(root).reverse(),
       links = tree.links(nodes);
 
+  var depthCounter = 0;
+
   // Normalize for fixed-depth.
-  nodes.forEach(function(d) { d.y = d.depth * 180; });
+  nodes.forEach(function(d) {
+    d.y = d.depth * 180;
+    if (d.depth == 1) {
+      d.linkColor = colors[(depthCounter % (colors.length - 1))];
+      depthCounter++;
+    }
+  });
+
+  //Set link colors based on parent color
+  nodes.forEach(function (d) {
+      var obj = d;
+      while ((obj.source && obj.source.depth > 1) || obj.depth > 1) {
+          obj = (obj.source) ? obj.source.parent : obj.parent;
+      }
+      d.linkColor = (obj.source) ? obj.source.linkColor : obj.linkColor;
+
+  });
 
   // Update the nodes…
   var node = svg.selectAll("g.node")
-      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+    .data(nodes, function(d) {
+      return d.id || (d.id = ++i);
+    });
 
   // Enter any new nodes at the parent's previous position.
   var nodeEnter = node.enter().append("g")
@@ -62,7 +86,18 @@ function update(source) {
 
   nodeEnter.append("circle")
       .attr("r", 1e-6)
-      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+      .on("mouseover", function (d) {
+          node_onMouseOver(d);
+      })
+      .on("mouseout", function (d) {
+        node_onMouseOut(d);
+      })
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; })
+      .style("fill-opacity", ".8")
+      //change
+      .style("stroke", function (d) {
+          return d.source ? d.source.linkColor : d.linkColor;
+  });
 
   nodeEnter.append("text")
       .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
