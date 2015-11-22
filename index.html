@@ -25,7 +25,7 @@
 </style>
 <body>
 <script src="./bower_components/d3/d3.min.js"></script>
-<script src="./git-tree-dummy.json"></script>
+<script src="./git-tree.json"></script>
 <script>
 
 var margin = {top: 20, right: 120, bottom: 20, left: 120},
@@ -48,7 +48,7 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.json("./git-tree-dummy.json", function(error, flare) {
+d3.json("./git-tree.json", function(error, flare) {
   console.log('Flare: ',flare);
   if (error) throw error;
 
