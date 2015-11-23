@@ -22,10 +22,10 @@ var diagonal = d3.svg.diagonal()
     .projection(function(d) { return [d.y, d.x]; });
 
 var svg = d3.select("body").append("svg")
-    .attr("width", width + margin.right + margin.left)
-    .attr("height", height + margin.top + margin.bottom)
+  .attr("width", width + margin.right + margin.left)
+  .attr("height", height + margin.top + margin.bottom)
   .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 d3.json("../data/git-tree.json", function(error, flare) {
   console.log('Flare: ',flare);
@@ -91,12 +91,12 @@ function update(source) {
 
   nodeEnter.append("circle")
       .attr("r", 1e-6)
-      .on("mouseover", function (d) {
-          node_onMouseOver(d);
-      })
-      .on("mouseout", function (d) {
-        node_onMouseOut(d);
-      })
+      // .on("mouseover", function (d) {
+      //     node_onMouseOver(d);
+      // })
+      // .on("mouseout", function (d) {
+      // //   node_onMouseOut(d);
+      // })
       .style("fill", function(d) {
         circles[d._children] = this;
         return d.source ? d.source.linkColor : d.linkColor;
@@ -154,6 +154,7 @@ var rootCounter = 0;
   // Enter any new links at the parent's previous position.
   link.enter().insert("path", "g")
       .attr("class", "link")
+
       .attr("d", function(d) {
         var o = {x: source.x0, y: source.y0};
         return diagonal({source: o, target: o});
@@ -173,9 +174,9 @@ var rootCounter = 0;
       // .style("stroke-opacity", function (d) {
       //   return d.target[spendField] <= 0 ? .1 : ((d.source.depth + 1) / 4.5);
       // })
-      .style("stroke-linecap", "round")
-      .on("mouseover", function (d) {node_onMouseOver(d.source);})
-      .on("mouseout", function (d) { node_onMouseOut(d.source)});
+      // .style("stroke-linecap", "round")
+      // .on("mouseover", function (d) {node_onMouseOver(d.source);})
+      // .on("mouseout", function (d) { node_onMouseOut(d.source)});
 
   // Transition links to their new position.
   link.transition()
@@ -206,37 +207,37 @@ var rootCounter = 0;
   });
 }
 
-function node_onMouseOver(d) {
+// function node_onMouseOver(d) {
 
-  if (typeof d.target != "undefined") {
-      d = d.target;
-  }
-  d3.select(circles[d._children]).transition().style("fill-opacity",0.6);
-  highlightPath(d);
+//   if (typeof d.target != "undefined") {
+//       d = d.target;
+//   }
+//   d3.select(circles[d._children]).transition().style("fill-opacity",0.6);
+//   highlightPath(d);
 
-  function highlightPath(d) {
-    if (d) {
-        d3.select(paths[d._children]).style("stroke-opacity",function (d) {
-          return d.target[spendField] <= 0 ? .1 + .3 : ((d.source.depth + 1) / 4.5) + .3;
-        });
-        highlightPath(d.parent);
-    }
-  }
-}
+//   function highlightPath(d) {
+//     if (d) {
+//         d3.select(paths[d._children]).style("stroke-opacity",function (d) {
+//           return d.target[spendField] <= 0 ? .1 + .3 : ((d.source.depth + 1) / 4.5) + .3;
+//         });
+//         highlightPath(d.parent);
+//     }
+//   }
+// }
 
-function node_onMouseOut(d) {
-  d3.select(circles[d._children]).transition().style("fill-opacity",0.3);
-  noHighlightPath(d);
+// function node_onMouseOut(d) {
+//   d3.select(circles[d._children]).transition().style("fill-opacity",0.3);
+//   noHighlightPath(d);
 
-  function noHighlightPath(d) {
-    if (d) {
-        d3.select(paths[d._children]).style("stroke-opacity",function (d) {
-          return d.target[spendField] <= 0 ? .1 : ((d.source.depth + 1) / 4.5);
-        });
-        noHighlightPath(d.parent);
-    }
-  }
-}
+//   function noHighlightPath(d) {
+//     if (d) {
+//         d3.select(paths[d._children]).style("stroke-opacity",function (d) {
+//           return d.target[spendField] <= 0 ? .1 : ((d.source.depth + 1) / 4.5);
+//         });
+//         noHighlightPath(d.parent);
+//     }
+//   }
+// }
 
 // Toggle children on click.
 function click(d) {
@@ -248,4 +249,91 @@ function click(d) {
     d._children = null;
   }
   update(d);
+}
+
+
+// Add the clipping path
+svg.append("svg:clipPath").attr("id", "clipper")
+    .append("svg:rect")
+    .attr('id', 'clip-rect');
+
+var layoutRoot = svg
+    .append("svg:g")
+    .attr("class", "container")
+    .attr("transform", "translate(" + maxLabelLength + ",0)");
+
+// set the clipping path
+var animGroup = layoutRoot.append("svg:g")
+    .attr("clip-path", "url(#clipper)");
+
+function setupMouseEvents()
+{
+    ui.nodeGroup.on('mouseover', function(d, i)
+    {
+        d3.select(this).select("circle").classed("hover", true);
+    })
+        .on('mouseout', function(d, i)
+        {
+            d3.select(this).select("circle").classed("hover", false);
+        })
+        .on('hover', function(nd, i)
+        {
+            // Walk parent chain
+            var ancestors = [];
+            var parent = nd;
+            while (!_.isUndefined(parent)) {
+                ancestors.push(parent);
+                parent = parent.parent;
+            }
+
+            // Get the matched links
+            var matchedLinks = [];
+            ui.linkGroup.selectAll('path.link')
+                .filter(function(d, i)
+                {
+                    return _.any(ancestors, function(p)
+                    {
+                        return p === d.target;
+                    });
+                })
+                .each(function(d)
+                {
+                    matchedLinks.push(d);
+                });
+
+            animateParentChain(matchedLinks);
+        });
+}
+
+function animateParentChain(links)
+{
+    var linkRenderer = d3.svg.diagonal()
+        .projection(function(d)
+        {
+            return [d.y, d.x];
+        });
+
+    // Links
+    ui.animGroup.selectAll("path.selected")
+        .data([])
+        .exit().remove();
+
+    ui.animGroup
+        .selectAll("path.selected")
+        .data(links)
+        .enter().append("svg:path")
+        .attr("class", "selected")
+        .attr("d", linkRenderer);
+
+    // Animate the clipping path
+    var overlayBox = ui.svg.node().getBBox();
+
+    ui.svg.select("#clip-rect")
+        .attr("x", overlayBox.x + overlayBox.width)
+        .attr("y", overlayBox.y)
+        .attr("width", 0)
+        .attr("height", overlayBox.height)
+        .transition().duration(500)
+        .attr("x", overlayBox.x)
+        .attr("width", overlayBox.width);
 }
